@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Traits\Auditable;
 use App\Traits\ClearsGlobalSearchCache;
 use App\Traits\HasSafeStringAttribute;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 use OpenApi\Attributes as OA;
 
@@ -53,7 +55,26 @@ class Project extends BaseModel
 
     protected static function booted()
     {
+        static::addGlobalScope('project_membership', function (Builder $builder): void {
+            $user = auth()->user();
+            $teamId = currentTeam()?->id;
+
+            if (! $user || $teamId === null) {
+                return;
+            }
+
+            $builder->where('team_id', $teamId)
+                ->where(function (Builder $access) use ($user, $teamId): void {
+                    $access->whereHas('members', fn (Builder $members) => $members->whereKey($user->id));
+
+                    if ($user->isAdminOfTeam($teamId)) {
+                        $access->orWhere('team_id', $teamId);
+                    }
+                });
+        });
+
         static::created(function ($project) {
+            $project->members()->sync($project->team->members()->pluck('users.id'));
             ProjectSetting::create([
                 'project_id' => $project->id,
             ]);
@@ -93,6 +114,11 @@ class Project extends BaseModel
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 
     public function services()

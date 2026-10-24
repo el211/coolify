@@ -11,13 +11,14 @@ it('allows any user to view any projects', function () {
     expect($policy->viewAny($user))->toBeTrue();
 });
 
-it('allows team member to view their own team project', function () {
+it('allows team admin to view their own team project', function () {
     $teams = collect([
         (object) ['id' => 1],
     ]);
 
     $user = Mockery::mock(User::class)->makePartial();
     $user->shouldReceive('getAttribute')->with('teams')->andReturn($teams);
+    $user->shouldReceive('isAdminOfTeam')->with(1)->andReturn(true);
 
     $project = Mockery::mock(Project::class)->makePartial();
     $project->team_id = 1;
@@ -33,6 +34,7 @@ it('denies non-member to view another team project', function () {
 
     $user = Mockery::mock(User::class)->makePartial();
     $user->shouldReceive('getAttribute')->with('teams')->andReturn($teams);
+    $user->shouldReceive('isAdminOfTeam')->with(2)->andReturn(false);
 
     $project = Mockery::mock(Project::class)->makePartial();
     $project->team_id = 2;

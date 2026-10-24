@@ -50,7 +50,7 @@ class Show extends Component
     {
         $projectUuid = $project_uuid ?? request()->route('project_uuid');
         $teamId = currentTeam()->id;
-        $project = Project::where('team_id', $teamId)->where('uuid', $projectUuid)->first();
+        $project = Project::ownedByCurrentTeam()->where('team_id', $teamId)->where('uuid', $projectUuid)->first();
         if (! $project) {
             return redirect()->route('dashboard');
         }

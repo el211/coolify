@@ -22,6 +22,8 @@ class Edit extends Component
 
     public $icon;
 
+    public array $selectedMemberIds = [];
+
     public function uploadIcon(ProjectIconStorageService $iconStorage): bool
     {
         try {
@@ -70,8 +72,10 @@ class Edit extends Component
     public function mount(string $project_uuid)
     {
         try {
-            $this->project = Project::where('team_id', currentTeam()->id)->where('uuid', $project_uuid)->firstOrFail();
+            $this->project = Project::ownedByCurrentTeam()->where('uuid', $project_uuid)->firstOrFail();
+            $this->authorize('update', $this->project);
             $this->syncData();
+            $this->selectedMemberIds = $this->project->members()->pluck('users.id')->map(fn ($id): string => (string) $id)->all();
         } catch (\Throwable $e) {
             return handleError($e, $this);
         }
@@ -99,6 +103,19 @@ class Edit extends Component
             $this->dispatch('success', 'Project updated.');
         } catch (\Throwable $e) {
             return handleError($e, $this);
+        }
+    }
+
+    public function saveMembers(): void
+    {
+        try {
+            $this->authorize('update', $this->project);
+            $memberIds = currentTeam()->members()->whereIn('users.id', $this->selectedMemberIds)->pluck('users.id');
+            $this->project->members()->sync($memberIds);
+            $this->selectedMemberIds = $memberIds->map(fn ($id): string => (string) $id)->all();
+            $this->dispatch('success', 'Project access updated.');
+        } catch (\Throwable $e) {
+            handleError($e, $this);
         }
     }
 }

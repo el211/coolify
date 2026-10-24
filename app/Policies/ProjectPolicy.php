@@ -20,7 +20,8 @@ class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return $user->teams->contains('id', $project->team_id);
+        return $user->teams->contains('id', $project->team_id)
+            && ($user->isAdminOfTeam($project->team_id) || $project->members()->whereKey($user->id)->exists());
     }
 
     /**

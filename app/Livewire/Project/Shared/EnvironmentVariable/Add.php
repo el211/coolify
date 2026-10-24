@@ -118,7 +118,7 @@ class Add extends Component
         // Get project variables if we have a project_uuid in route
         $projectUuid = data_get($this->parameters, 'project_uuid');
         if ($projectUuid) {
-            $project = Project::where('team_id', $team->id)
+            $project = Project::ownedByCurrentTeam()->where('team_id', $team->id)
                 ->where('uuid', $projectUuid)
                 ->first();
 

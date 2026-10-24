@@ -21,7 +21,7 @@ class Show extends Component
     public function mount(string $project_uuid)
     {
         try {
-            $this->project = Project::where('team_id', currentTeam()->id)
+            $this->project = Project::ownedByCurrentTeam()
                 ->where('uuid', $project_uuid)
                 ->with([
                     'environments' => fn ($query) => $query
@@ -41,6 +41,8 @@ class Show extends Component
                         ->orderBy('created_at'),
                 ])
                 ->firstOrFail();
+
+            $this->authorize('view', $this->project);
 
             if ($this->prefersCanvasView('project')) {
                 return $this->redirectRoute('project.canvas', ['project_uuid' => $this->project->uuid], navigate: true);

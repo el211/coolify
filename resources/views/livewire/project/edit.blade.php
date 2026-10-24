@@ -103,6 +103,30 @@
             </section>
         </form>
 
+        @can('update', $project)
+            <form wire:submit="saveMembers" class="overflow-hidden rounded-[10px] border border-neutral-200 dark:border-white/10">
+                <div class="border-b border-neutral-200 px-5 py-4 dark:border-white/10">
+                    <h2 class="text-sm font-semibold">Project access</h2>
+                    <p class="mt-1 text-sm text-neutral-500 dark:text-fg-dim">Choose which team members can see and work on this project. Team admins always have access.</p>
+                </div>
+                <div class="flex flex-col gap-3 px-5 py-4">
+                    @foreach (currentTeam()->members as $member)
+                        <label wire:key="project-member-{{ $member->id }}" class="flex items-center gap-3 text-sm">
+                            @if (in_array($member->pivot->role, ['admin', 'owner'], true))
+                                <input type="checkbox" checked disabled class="rounded border-neutral-300 text-primary-600 dark:border-white/20 dark:bg-neutral-900">
+                            @else
+                                <input type="checkbox" value="{{ $member->id }}" wire:model="selectedMemberIds" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-neutral-900">
+                            @endif
+                            <span>{{ $member->name }} <span class="text-neutral-500 dark:text-fg-dim">({{ $member->email }})</span>@if (in_array($member->pivot->role, ['admin', 'owner'], true)) <span class="text-neutral-500 dark:text-fg-dim">· Team admin</span>@endif</span>
+                        </label>
+                    @endforeach
+                    <div>
+                        <x-forms.button type="submit">Save project access</x-forms.button>
+                    </div>
+                </div>
+            </form>
+        @endcan
+
         <section
             class="overflow-hidden rounded-[10px] border border-red-300 bg-red-50/80 dark:border-red-500/25 dark:bg-red-500/[0.06]">
             <div class="flex items-start justify-between gap-4 px-5 py-4">
